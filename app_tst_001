@@ -1,1 +1,40 @@
 <mxfile userAgent="Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36" version="7.4.0" editor="www.draw.io" type="github"><diagram>UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+
+st.set_page_config(page_title="Dashboard de Produtividade", layout="wide")
+st.title("📊 Dashboard de Produtividade")
+
+# Upload do arquivo Excel
+uploaded_file = st.file_uploader("Faça upload do arquivo Excel com os dados de produtividade", type=["xlsx"])
+
+if uploaded_file:
+    # Leitura da planilha
+    df = pd.read_excel(uploaded_file)
+
+    # Converte a coluna de data, se existir
+    if 'Data' in df.columns:
+        df['Data'] = pd.to_datetime(df['Data'])
+
+        # Data de ontem
+        ontem = datetime.now().date() - timedelta(days=1)
+
+        # Filtra os dados de ontem
+        df_ontem = df[df['Data'].dt.date == ontem]
+
+        st.subheader(f"📅 Dados de {ontem.strftime('%d/%m/%Y')}")
+
+        if df_ontem.empty:
+            st.warning("Nenhum dado encontrado para ontem.")
+        else:
+            st.dataframe(df_ontem)
+
+            # Exemplo de gráfico se houver coluna 'Colaborador' e 'Produtividade'
+            if 'Colaborador' in df_ontem.columns and 'Produtividade' in df_ontem.columns:
+                prod = df_ontem.groupby('Colaborador')['Produtividade'].sum().reset_index()
+                st.bar_chart(prod.set_index('Colaborador'))
+    else:
+        st.error("A planilha deve conter uma coluna chamada 'Data'.")
+else:
+    st.info("Por favor, envie um arquivo Excel para visualizar os dados.")
